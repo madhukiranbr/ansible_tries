@@ -12,18 +12,6 @@
         key: name
       register: users
       delegate_to: localhost
-    - debug:
-        msg: 'User {{ users.dict.dag.name }} has UID {{ users.dict.dag.uid }} and GID {{ users.dict.dag.gid }}'
-    - name: Count our fruit
-      shell: "echo {{ item }};sleep 0;"
-      #debug:
-      #  msg: "{{ item }} with index {{ my_idx }}"
-      loop:
-          - apple
-          - banana
-          - pear
-      loop_control:
-          index_var: my_idx
     - name: "loop through list from a variable"
       debug:
         msg: "An item: {{ item }}"
