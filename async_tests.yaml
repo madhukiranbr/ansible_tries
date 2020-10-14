@@ -1,0 +1,64 @@
+---
+- name: update web servers
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: ensure apache is at the latest version
+      debug:
+          msg: "Hello"
+    - name: Read users from CSV file and return a dictionary
+      community.general.read_csv:
+        path: users.csv
+        key: name
+      register: users
+      delegate_to: localhost
+    - debug:
+        msg: 'User {{ users.dict.dag.name }} has UID {{ users.dict.dag.uid }} and GID {{ users.dict.dag.gid }}'
+    - name: Count our fruit
+      shell: "echo {{ item }};sleep 0;"
+      #debug:
+      #  msg: "{{ item }} with index {{ my_idx }}"
+      loop:
+          - apple
+          - banana
+          - pear
+      loop_control:
+          index_var: my_idx
+    - name: "loop through list from a variable"
+      debug:
+        msg: "An item: {{ item }}"
+      with_items: "{{ users.dict }}"
+    - name: "do something"
+      shell: "echo An item: {{ item }};sleep 50;mkdir -p /home/osboxes/ansible_tests/test/{{ item }}"
+      async: 55
+      poll: 0
+      register: result_async
+      with_items: "{{ users.dict }}"
+    #- name: "Debug var"
+    #  debug:
+    #    msg: "{{ result_async }}"
+    #- name: "CHeck status of all do somethings"
+    #  loop: "{{ result_async.results }}"
+    #  loop_control:
+    #    loop_var: "result_async_item"
+    #  async_status:
+    #    jid: "{{ result_async_item.ansible_job_id }}"
+    #  register: resultall
+    #  until: resultall.finished
+    #  retries: 30
+    - name: "check if something is done"
+      shell: "test -d /home/osboxes/ansible_tests/test/{{ item }}"
+      async: 600
+      poll: 60
+      register: async_results
+      until: async_results.rc == 0
+      with_items: "{{ users.dict }}"
+    - name: wait till all somethings tasks are done
+      async_status:
+        jid: "{{ async_result_item.ansible_job_id }}"
+      loop: "{{ async_results.results }}"
+      loop_control:
+        loop_var: "async_result_item"
+      register: async_poll_results
+      until: async_poll_results.finished
+      retries: 30
